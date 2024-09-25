@@ -22,17 +22,15 @@ public:
     QMutex mutex;
 
 public:
-    void addseg(const QString msg); //加线
-    bool addmanysegs(const QString msg); //加很多线
-    void delseg(const QString msg); //减线
-
-    void connectseg(const QString msg); //连线
-    void splitseg(const QString msg); //break seg
-    void retypesegment(const QString msg); //线改颜色
-
-    void addmarkers(const QString msg); //加marker
-    void delmarkers(const QString msg); //删marker
-    void retypemarker(const QString msg); //marker改颜色
+    void addseg(const QString msg);//加线
+    void addmanysegs(const QString msg); //加很多线
+    void delseg(const QString msg);//减线
+    void addmarkers(const QString msg);//加marker
+    void delmarkers(const QString msg);//删marker
+    void retypemarker(const QString msg);//marker改颜色
+    void connectseg(const QString msg);//连线
+    void retypesegment(const QString msg);//线改颜色
+    void splitseg(const QString msg);//break seg
 
 
     void simpleConnectExecutor(V_NeuronSWC_list&segments, vector<segInfoUnit>&segInfo);

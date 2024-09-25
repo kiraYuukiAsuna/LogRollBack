@@ -38,7 +38,7 @@ Peng, H, Ruan, Z., Atasoy, D., and Sternson, S. (2010) “Automatic reconstructi
 #define _V_NEURON_SWC_H_
 
 #include "../basic_c_fun/v3d_basicdatatype.h"
-#include "../basic_c_fun/basic_surf_objs.h"
+
 #include <vector>
 #include <string>
 #include <map>
@@ -101,7 +101,7 @@ struct V_NeuronSWC_unit
             level, creatmode, timestamp, tfresindex;
 		};
 	};
-    V_NeuronSWC_unit() {for (V3DLONG i=0;i<V3DLONG(sizeof(data)/sizeof(double));i++) data[i]=0; r=0.5;}
+        V_NeuronSWC_unit() {for (V3DLONG i=0;i<V3DLONG(sizeof(data)/sizeof(double));i++) data[i]=0; r=0.5;}
 	operator V_NeuronSWC_coord() {V_NeuronSWC_coord c; c.x=x; c.y=y; c.z=z; return c;}
 	V_NeuronSWC_coord get_coord() {V_NeuronSWC_coord c; c.x=x; c.y=y; c.z=z; return c;}
 	void set(double x1, double y1, double z1, double r1, double p1, double t1) {x=x1; y=y1; z=z1; r=r1;parent=p1;type=t1;}
@@ -109,8 +109,6 @@ struct V_NeuronSWC_unit
 	void set(double x1, double y1, double z1, double r1) {x=x1; y=y1;z=z1;r=r1;}
 	void set(double x1, double y1, double z1) {x=x1; y=y1;z=z1;}
     void setType(double t) {type = t;}
-
-    operator XYZ()const  {return XYZ(x,y,z);}
 };
 
 inline double distL2square(const V_NeuronSWC_unit & a, const V_NeuronSWC_unit & b)
@@ -149,7 +147,7 @@ struct V_NeuronSWC
     bool to_be_deleted;   // @ADDED by Alessandro on 2015-05-08. Needed to support late delete of multiple neuron segments.
     bool to_be_broken;
 	bool on; //Added by Y. Wang on 2016-05-25. For the segment-wise display of a SWC.
-    long long segid;
+
 	bool check_data_consistency() {/* to verify if unique node id have unique coord, and if parent are in the nid, except -1*/ return true;}
 
 	V_NeuronSWC(string new_name="unset", bool is_linegraph=false)

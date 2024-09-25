@@ -7,14 +7,14 @@
 #include "neuron_editing/neuron_format_converter.h"
 
 int main(int argc, char* argv[]) {
-    std::filesystem::path path = "test.swc";
-    std::filesystem::path outPath = "test.swc";
+    std::filesystem::path path = "12939_P065_T01_(1)_S019_1dAFTsur_PL.L_OL.L_R0919_OMZ_20240229_YW.swc";
+    std::filesystem::path outPath = "after_12939_P065_T01_(1)_S019_1dAFTsur_PL.L_OL.L_R0919_OMZ_20240229_YW.swc";
 
     Operation op;
     auto tree = readSWC_file(QString::fromStdString(path.string()));
     op.segments = NeuronTree__2__V_NeuronSWC_list(tree);
 
-    std::ifstream file(path);
+    std::ifstream file("12939_P065_T01_(1)_S019_1dAFTsur_PL.L_OL.L_R0919_OMZ_20240229_YW.txt");
     if (!file.is_open()) {
         std::cerr << "File not found";
         return 1;
@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
 
     std::string line;
     while (std::getline(file, line)) {
-        QString msg = QString::fromStdString(line);
+        QString msg = QString::fromStdString(line.substr(std::string{"2023/08/14 14:53:10.9571  "}.size()));
         if (msg.startsWith("/drawline_norm:") || msg.startsWith("/drawline_undo:") || msg.
             startsWith("/drawline_redo:")) {
             op.addseg(msg.right(msg.size() - QString("/drawline_norm:").size()));

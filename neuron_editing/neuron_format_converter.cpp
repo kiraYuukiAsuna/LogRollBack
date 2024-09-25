@@ -70,7 +70,6 @@ NeuronTree V_NeuronSWC__2__NeuronTree(V_NeuronSWC & seg) // convert V_NeuronSWC 
             S.creatmode = seg.row.at(k).creatmode;
             S.timestamp = seg.row.at(k).timestamp;
             S.tfresindex = seg.row.at(k).tfresindex;
-            S.uuid = seg.row.at(k).uuid;
 			
 			//qDebug("%s  ///  %d %d (%g %g %g) %g %d", buf, S.n, S.type, S.x, S.y, S.z, S.r, S.pn);
 			
@@ -137,8 +136,7 @@ V_NeuronSWC_list NeuronTree__2__V_NeuronSWC_list(NeuronTree * nt)           //co
 	
 	V_NeuronSWC_list editableNeuron;
 
-    bool isSuccess = true;
-    editableNeuron.seg = cur_seg.decompose(isSuccess); //////////////
+	editableNeuron.seg = cur_seg.decompose(); //////////////
 //        qDebug("	editableNeuron.seg.size = %d", editableNeuron.seg.size());
 	
 	editableNeuron.name = qPrintable(nt->name);
@@ -153,68 +151,9 @@ V_NeuronSWC_list NeuronTree__2__V_NeuronSWC_list(NeuronTree * nt)           //co
 }
 
 
-V_NeuronSWC_list NeuronTree__2__V_NeuronSWC_list(NeuronTree * nt, vector<string> uuids)           //convert to V3D's internal neuron structure
-{
-    if (!nt)
-        return V_NeuronSWC_list();
-
-    V_NeuronSWC cur_seg;	cur_seg.clear();
-    QList<NeuronSWC> & qlist = nt->listNeuron;
-
-    if(qlist.size() != uuids.size())
-        return V_NeuronSWC_list();
-
-    for (V3DLONG i=0;i<qlist.size();i++)
-    {
-        V_NeuronSWC_unit v;
-        v.n		= qlist[i].n;
-        v.type	= qlist[i].type;
-        v.x 	= qlist[i].x;
-        v.y 	= qlist[i].y;
-        v.z 	= qlist[i].z;
-        v.r 	= qlist[i].r;
-        v.parent = qlist[i].pn;
-        v.level = qlist[i].level;
-        v.creatmode = qlist[i].creatmode; //for timestamping and quality control LMG 8/10/2018
-        v.timestamp = qlist[i].timestamp; //for timestamping and quality control LMG 8/10/2018
-        v.tfresindex = qlist[i].tfresindex; //for TeraFly resolution index LMG 13/12/2018
-        v.uuid = uuids[i];
-
-        cur_seg.append(v);
-        //qDebug("%d ", cur_seg.nnodes());
-    }
-    cur_seg.name = qPrintable(QString("%1").arg(1));
-    cur_seg.b_linegraph=false; //do not forget to do this
-
-    V_NeuronSWC_list editableNeuron;
-
-    bool isSuccess = true;
-    editableNeuron.seg = cur_seg.decompose(isSuccess); //////////////
-    //        qDebug("	editableNeuron.seg.size = %d", editableNeuron.seg.size());
-    if(!isSuccess){
-        editableNeuron.name = "invalid_swc";
-        return editableNeuron;
-    }
-
-    editableNeuron.name = qPrintable(nt->name);
-    editableNeuron.file = qPrintable(nt->file);
-    editableNeuron.b_traced = false;
-    editableNeuron.color_uc[0] = nt->color.r;
-    editableNeuron.color_uc[1] = nt->color.g;
-    editableNeuron.color_uc[2] = nt->color.b;
-    editableNeuron.color_uc[3] = nt->color.a;
-
-    return editableNeuron;
-}
-
-
 
 V_NeuronSWC_list NeuronTree__2__V_NeuronSWC_list(NeuronTree & nt)           //convert to V3D's internal neuron structure. overload for convenience
 {
 	return NeuronTree__2__V_NeuronSWC_list( &nt );
 }
 
-V_NeuronSWC_list NeuronTree__2__V_NeuronSWC_list(NeuronTree & nt, vector<string> uuids)           //convert to V3D's internal neuron structure. overload for convenience
-{
-    return NeuronTree__2__V_NeuronSWC_list( &nt, uuids );
-}

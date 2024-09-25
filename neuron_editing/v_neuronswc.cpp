@@ -64,15 +64,15 @@ void V_NeuronSWC::printInfo()
 	{
 		V_NeuronSWC_unit v = row.at(i);
 		qDebug()<<"row ["<< i <<"] : "<<v.data[0]<<" "<<v.data[1]<<" "<<v.data[2]<<" "<<v.data[3]<<" "<<v.data[4]<<" "<<v.data[5]<<" "<<v.data[6];
-        qDebug()<<"uuid: "<<QString::fromStdString(v.uuid);
+        qDebug()<<"segId: "<<v.seg_id;
 	}
 	qDebug()<<"*********** finish print info";
 }
 
 
-vector<V_NeuronSWC> V_NeuronSWC::decompose(bool& isSuccess)
+vector <V_NeuronSWC> V_NeuronSWC::decompose()
 {
-    return decompose_V_NeuronSWC(*this, isSuccess);
+	return decompose_V_NeuronSWC(*this);
 }
 bool V_NeuronSWC::reverse()
 {
@@ -91,10 +91,9 @@ void V_NeuronSWC_list::decompose()
 {
 	vector <V_NeuronSWC> new_segs;
 	new_segs.clear();
-    bool isSuccess = true;
 	for (int k=0; k<seg.size(); k++)
 	{
-        vector <V_NeuronSWC> tmp_segs = seg.at(k).decompose(isSuccess);
+		vector <V_NeuronSWC> tmp_segs = seg.at(k).decompose();
 		for (int j=0; j<tmp_segs.size(); j++)
 		{
 			new_segs.push_back(tmp_segs.at(j));
@@ -109,8 +108,7 @@ bool V_NeuronSWC_list::reverse()
 	bool res = false;
 	//must first decompose to simple segments
 	{
-        bool isSuccess = true;
-        seg = merge_V_NeuronSWC_list(*this).decompose(isSuccess);
+		seg = merge_V_NeuronSWC_list(*this).decompose();
 	}
 	for (int i=0; i<seg.size(); i++)
 	{
@@ -212,7 +210,7 @@ V_NeuronSWC merge_V_NeuronSWC_list(V_NeuronSWC_list & in_swc_list)
 			v.n = (n0+1) + row[j].n-min_ind;
 			for (i=1;i<=5;i++)	v.data[i] = row[j].data[i];
 			v.parent = (row[j].parent<0)? -1 : ((n0+1) + row[j].parent-min_ind); //change row[j].parent<=0 to row[j].parent<0, PHC 091123.
-            v.uuid = row[j].uuid;
+
 			//qDebug()<<row[j].n<<"->"<<v.n<<" "<<row[j].parent<<"->"<<v.parent<<" "<<n;
 
 			out_swc.row.push_back(v);
@@ -409,7 +407,7 @@ Link_Map get_link_map(const V_NeuronSWC & in_swc)
 }
 
 //091212 RZC
-vector <V_NeuronSWC> decompose_V_NeuronSWC(V_NeuronSWC & in_swc, bool& isSuccess)
+vector <V_NeuronSWC> decompose_V_NeuronSWC(V_NeuronSWC & in_swc)
 {
 	double duration;
 
@@ -441,7 +439,6 @@ vector <V_NeuronSWC> decompose_V_NeuronSWC(V_NeuronSWC & in_swc, bool& isSuccess
 	int branchID = 0;
 	size_t removedCount = 0;
 	bool halted = false;
-    int repeatCount = 0;
 	for (;;)
 	{
 		if (indices.empty()) break;
@@ -485,7 +482,7 @@ vector <V_NeuronSWC> decompose_V_NeuronSWC(V_NeuronSWC & in_swc, bool& isSuccess
 			//	continue; //skip removed point
 			//}
 
-            n_left++; //left valid powint
+			n_left++; //left valid point
 			i_left = indices[i];
 
 			if ((nodelink.nlink ==1 && nodelink.in_link.size()==0) // tip point (include single point)
@@ -503,14 +500,9 @@ vector <V_NeuronSWC> decompose_V_NeuronSWC(V_NeuronSWC & in_swc, bool& isSuccess
 		{
 			if (n_left)
 			{
-                qDebug("split_V_NeuronSWC_segs cann't find start point (left %d points)", n_left);
-                if(repeatCount >= 5){
-                    isSuccess = false;
-                    return out_swc_segs;
-                }
-                istart = i_left;
+				qDebug("split_V_NeuronSWC_segs cann't find start point (left %d points)", n_left);
+				istart = i_left;
 				cout << " -- " << istart << endl;
-                repeatCount++;
                 continue;
 			}
 			else
@@ -519,7 +511,6 @@ vector <V_NeuronSWC> decompose_V_NeuronSWC(V_NeuronSWC & in_swc, bool& isSuccess
 				break;
 			}
 		}
-        repeatCount = 0;
 
 		// extract a simple segment
 		V_NeuronSWC new_seg;
