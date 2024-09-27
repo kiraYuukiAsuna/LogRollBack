@@ -6,6 +6,27 @@
 #include "Operation.h"
 #include "neuron_editing/neuron_format_converter.h"
 
+struct DateTime {
+    int year;
+    int month;
+    int day;
+    int hour;
+    int minute;
+    int second;
+    int millisecond;
+};
+
+DateTime parseDateTime(const std::string& dateTimeStr) {
+    DateTime dt;
+    std::istringstream ss(dateTimeStr);
+    char delimiter;
+
+    ss >> dt.year >> delimiter >> dt.month >> delimiter >> dt.day;
+    ss >> dt.hour >> delimiter >> dt.minute >> delimiter >> dt.second >> delimiter >> dt.millisecond;
+
+    return dt;
+}
+
 int main(int argc, char* argv[]) {
     std::filesystem::path path = "12939_P065_T01_(1)_S019_1dAFTsur_PL.L_OL.L_R0919_OMZ_20240229_YW.swc";
     std::filesystem::path outPath = "after_12939_P065_T01_(1)_S019_1dAFTsur_PL.L_OL.L_R0919_OMZ_20240229_YW.swc";
@@ -22,7 +43,12 @@ int main(int argc, char* argv[]) {
 
     std::string line;
     while (std::getline(file, line)) {
-        QString msg = QString::fromStdString(line.substr(std::string{"2023/08/14 14:53:10.9571  "}.size()));
+        auto timepointStr = line.substr(0, std::string{"2023/08/14 14:53:10.9571"}.size()+1);
+        DateTime dt = parseDateTime(timepointStr);
+
+
+
+        QString msg = QString::fromStdString(line.substr(std::string{"2023/08/14 14:53:10.9571 "}.size()+1));
         if (msg.startsWith("/drawline_norm:") || msg.startsWith("/drawline_undo:") || msg.
             startsWith("/drawline_redo:")) {
             op.addseg(msg.right(msg.size() - QString("/drawline_norm:").size()));
