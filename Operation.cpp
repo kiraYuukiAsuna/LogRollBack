@@ -8,7 +8,7 @@
 
 void Operation::addseg(const QString msg)
 {
-    QStringList pointlistwithheader=msg.split(',',Qt::SkipEmptyParts);
+  QStringList pointlistwithheader=msg.split(',',Qt::SkipEmptyParts);
     if(pointlistwithheader.size()<1){
         std::cerr<<"ERROR:pointlistwithheader.size<1\n";
     }
@@ -45,18 +45,10 @@ void Operation::addseg(const QString msg)
         }
     }
 
-    auto addnt=convertMsg2NT(pointlist,clienttype,useridx,1);
+    auto addnt=convertMsg2NT(pointlist,clienttype,useridx,1,clienttype);
     auto segs=NeuronTree__2__V_NeuronSWC_list(addnt).seg;
-//    segs[0].printInfo();
 
-//    bool flag;
-//    if(fabs(point1.x-segs[0].row[0].x)<1e-4&&fabs(point1.y-segs[0].row[0].y)<1e-4&&fabs(point1.z-segs[0].row[0].z)<1e-4)
-//        flag=true;
-//    else
-//        flag=false;
-
-    mutex.lock();
-//    segments.append(NeuronTree__2__V_NeuronSWC_list(addnt).seg[0]);
+    QMutexLocker locker(&mutex);
     bool isNeedReverse = false;
     if(segs.size()==2){
         int comparedIndex=0;
@@ -182,26 +174,15 @@ void Operation::addseg(const QString msg)
         {
             std::cerr<<"INFO:not find connected seg ,"<<msg.toStdString()<<std::endl;
         }
-
-//        if(segIds1.size()==1 && segIds2.size()==1 && firstIndex==firstEndIndex && firstEndIndex!=-1 )
-//            isNeedReverse = true;
-//        if(segIds1.size()==1 && segIds2.size()>1)
-//            isNeedReverse = true;
-//        if(isNeedReverse)
-//            reverseSeg(segs[0]);
     }
 
+    V3DLONG point_size = segments.nrows();
     segments.append(segs[0]);
 
-    mutex.unlock();
-
     qDebug()<<"server addseg";
-//    for(int i=0;i<segments.seg.size();i++){
-//        segments.seg[i].printInfo();
-//    }
 }
 
-void Operation::addmanysegs(const QString msg){
+bool Operation::addmanysegs(const QString msg){
     QStringList pointlistwithheader=msg.split(',',Qt::SkipEmptyParts);
     if(pointlistwithheader.size()<1){
         std::cerr<<"ERROR:pointlistwithheader.size<1\n";
@@ -218,21 +199,56 @@ void Operation::addmanysegs(const QString msg){
     pointlist.removeAt(0);
     if(pointlist.size()==0){
         std::cerr<<"ERROR:pointlist.size=0\n";
-        return;
+        return true;
     }
 
     auto addnt=convertMsg2NT(pointlist,clienttype,useridx,1);
     auto segs=NeuronTree__2__V_NeuronSWC_list(addnt).seg;
 
-    mutex.lock();
+    QMutexLocker locker(&mutex);
+
+    bool isValid = true;
+    for(auto seg:segs){
+        for(int i=0; i<seg.row.size(); i++){
+            if(resolutionInfo.maxRes.x != 0){
+                if(seg.row[i].x >= resolutionInfo.maxRes.x ||
+                    seg.row[i].y >= resolutionInfo.maxRes.y ||
+                    seg.row[i].z >= resolutionInfo.maxRes.z){
+                    isValid = false;
+                    break;
+                }
+            }
+        }
+        if(!isValid){
+            break;
+        }
+    }
+
+    if(!isValid){
+        qDebug()<<"reject invalid segs";
+        return false;
+    }
 
     for(auto seg:segs){
+        bool flag = true;
+        for(int i=0; i<seg.row.size(); i++){
+            if(resolutionInfo.maxRes.x != 0 && flag){
+                if(seg.row[i].x >= resolutionInfo.maxRes.x ||
+                    seg.row[i].y >= resolutionInfo.maxRes.y ||
+                    seg.row[i].z >= resolutionInfo.maxRes.z){
+                    flag = false;
+                }
+            }
+        }
+        if(!flag){
+            continue;
+        }
         segments.append(seg);
     }
 
-    mutex.unlock();
-
     qDebug()<<"server addmanysegs";
+
+    return true;
 }
 
 void Operation::delseg(const QString msg)
@@ -258,11 +274,12 @@ void Operation::delseg(const QString msg)
         std::cerr<<"ERROR:pointlist.size=0\n";
         return;
     }
-    auto delnt=convertMsg2NT(pointlist,clienttype,useridx,isMany);
+    auto delnt=convertMsg2NT(pointlist,clienttype,useridx,isMany,clienttype);
     auto delsegs=NeuronTree__2__V_NeuronSWC_list(delnt).seg;
 
     int count=0;
-    mutex.lock();
+    QMutexLocker locker(&mutex);
+    
     for(int i=0;i<delsegs.size();i++){
         auto it=findseg(segments.seg.begin(),segments.seg.end(),delsegs[i]);
         if(it!=segments.seg.end())
@@ -272,16 +289,15 @@ void Operation::delseg(const QString msg)
                 qDebug()<<"server delseg";
             count++;
         }
-        else
-            std::cerr<<"INFO:not find del seg ,"<<msg.toStdString()<<std::endl;
-
+        else{
+            std::cerr<<"INFO:not find del seg"<<std::endl;
+            delsegs[i].printInfo();
+        }
     }
-
-    mutex.unlock();
 }
 
 void Operation::connectseg(const QString msg){
-    qDebug()<<msg;
+   qDebug()<<msg;
     QStringList pointlistwithheader=msg.split(',',Qt::SkipEmptyParts);
     if(pointlistwithheader.size()<1){
         std::cerr<<"ERROR:pointlistwithheader.size<1\n";
@@ -308,7 +324,7 @@ void Operation::connectseg(const QString msg){
     pointlist.removeAt(0);
     pointlist.removeAt(0);
 
-    auto segnt=convertMsg2NT(pointlist,clienttype,useridx,1);
+    auto segnt=convertMsg2NT(pointlist,clienttype,useridx,1,clienttype);
     auto connectsegs=NeuronTree__2__V_NeuronSWC_list(segnt).seg;
 //    for(int i=0;i<connectsegs.size();i++){
 //        connectsegs[i].printInfo();
@@ -414,20 +430,21 @@ void Operation::connectseg(const QString msg){
 
         else{
             std::cerr<<"INFO:not find connect seg ,"<<msg.toStdString()<<std::endl;
-//            mutex.unlock();
             return;
         }
     }
 
     simpleConnectExecutor(segments, segInfo);
-
+    
+    vector<V_NeuronSWC> connectedSegDecomposed;
+    bool isSuccess = true;
     if (segments.seg[segInfo[0].segID].to_be_deleted)
     {
         qDebug()<<"enter tracedNeuron.seg[segInfo[0]]";
-        vector<V_NeuronSWC> connectedSegDecomposed = decompose_V_NeuronSWC(segments.seg[segInfo[1].segID]);
+        connectedSegDecomposed = decompose_V_NeuronSWC(segments.seg[segInfo[1].segID], isSuccess);
         qDebug()<<"connectedSegDecomposed_size: "<<connectedSegDecomposed.size();
-        for (vector<V_NeuronSWC>::iterator addedIt = connectedSegDecomposed.begin(); addedIt != connectedSegDecomposed.end(); ++addedIt)
-            segments.seg.push_back(*addedIt);
+//        for (vector<V_NeuronSWC>::iterator addedIt = connectedSegDecomposed.begin(); addedIt != connectedSegDecomposed.end(); ++addedIt)
+//            segments.seg.push_back(*addedIt);
 
         segments.seg[segInfo[1].segID].to_be_deleted = true;
         segments.seg[segInfo[1].segID].on = false;
@@ -436,23 +453,26 @@ void Operation::connectseg(const QString msg){
     else if (segments.seg[segInfo[1].segID].to_be_deleted)
     {
         qDebug()<<"enter tracedNeuron.seg[segInfo[1]]";
-        vector<V_NeuronSWC> connectedSegDecomposed = decompose_V_NeuronSWC(segments.seg[segInfo[0].segID]);
-        for (vector<V_NeuronSWC>::iterator addedIt = connectedSegDecomposed.begin(); addedIt != connectedSegDecomposed.end(); ++addedIt)
-            segments.seg.push_back(*addedIt);
+        connectedSegDecomposed = decompose_V_NeuronSWC(segments.seg[segInfo[0].segID], isSuccess);
+//        for (vector<V_NeuronSWC>::iterator addedIt = connectedSegDecomposed.begin(); addedIt != connectedSegDecomposed.end(); ++addedIt)
+//            segments.seg.push_back(*addedIt);
 
         segments.seg[segInfo[0].segID].to_be_deleted = true;
         segments.seg[segInfo[0].segID].on = false;
     }
+    
+    for(int i=0; i<connectedSegDecomposed.size(); i++){
+        segments.append(connectedSegDecomposed[i]);
+    }
 
     std::vector<V_NeuronSWC>::iterator iter = segments.seg.begin();
     while (iter != segments.seg.end())
-        if (iter->to_be_deleted)
+        if (iter->to_be_deleted){
             iter = segments.seg.erase(iter);
+        }
         else
             ++iter;
 
-//    auto addnt=convertMsg2NT(pointlist,clienttype,useridx,0);
-//    segments.append(NeuronTree__2__V_NeuronSWC_list(addnt).seg[0]);
     qDebug()<<"server connectseg";
 }
 
@@ -476,7 +496,7 @@ void Operation::splitseg(const QString msg){
         return;
     }
 
-    auto tempnt=convertMsg2NT(pointlist,clienttype,useridx,1);
+    auto tempnt=convertMsg2NT(pointlist,clienttype,useridx,1,clienttype);
     auto segs=NeuronTree__2__V_NeuronSWC_list(tempnt).seg;
 
     if(segs.size()<=2)
@@ -488,21 +508,24 @@ void Operation::splitseg(const QString msg){
     auto it=findseg(segments.seg.begin(),segments.seg.end(),segs[0]);
     if(it!=segments.seg.end())
     {
+        int point_size = segments.nrows();
+
         point1.x=it->row[0].x;
         point1.y=it->row[0].y;
         point1.z=it->row[0].z;
         point2.x=it->row[it->row.size()-1].x;
         point2.y=it->row[it->row.size()-1].y;
         point2.z=it->row[it->row.size()-1].z;
+        
         segments.seg.erase(it);
     }
 
     else
     {
         std::cerr<<"INFO:not find del seg ,"<<msg.toStdString()<<std::endl;
-        return;
     }
-
+    
+   
     for(int i=1;i<segs.size();i++){
         if(distance(segs[i].row[0].x,point1.x,segs[i].row[0].y,point1.y,segs[i].row[0].z,point1.z)<0.3){
             segs[i].row[0].x=point1.x;
@@ -550,9 +573,12 @@ void Operation::splitseg(const QString msg){
                 (segs[i].row.end() - 1)->data[6] = -1;
             }
         }
+    }
+    
+    for(int i=1; i<segs.size(); i++){
         segments.append(segs[i]);
     }
-
+    
     qDebug()<<"server splitseg";
 }
 
@@ -582,25 +608,30 @@ void Operation::retypesegment(const QString msg)
         return;
     }
 
-    auto retypent=convertMsg2NT(pointlist,clienttype,useridx,isMany);
+    auto retypent=convertMsg2NT(pointlist,clienttype,useridx,isMany,clienttype);
     auto retypesegs=NeuronTree__2__V_NeuronSWC_list(retypent).seg;
 
     int count=0;
-
+    int retypeCount = 0;
+   
     QMutexLocker locker(&mutex);
+    vector<V_NeuronSWC> tobeInputSegs;
+    QList<CellAPO> tobeRemovedMarkers;
     for(int i=0;i<retypesegs.size();i++){
         auto it=findseg(segments.seg.begin(),segments.seg.end(),retypesegs[i]);
         if(it==segments.seg.end()){
             std::cerr<<"INFO:not find retype seg ,"<<msg.toStdString()<<std::endl;
             //            mutex.unlock();
-            return;
+            continue;
         }
+        tobeInputSegs.push_back(*it);
         int now=QDateTime::currentMSecsSinceEpoch();
         for(auto &unit:it->row){
             unit.type=newcolor;
             unit.level=now-unit.timestamp;
             unit.creatmode=useridx*10+clienttype;
         }
+
         if(count<5)
             qDebug()<<"server retypesegment";
         count++;
@@ -635,8 +666,11 @@ void Operation::addmarkers(const QString msg)
     marker.comment="";
     marker.orderinfo="";
 
+    vector<CellAPO> errorMarkers;
+
     QMutexLocker locker(&mutex);
     for(auto &msg:pointlist){
+        bool flag = true;
         auto markerinfo=msg.split(' ',Qt::SkipEmptyParts);
         if(markerinfo.size()!=6) continue;
         marker.color.r=markerinfo[0].toUInt();
@@ -646,18 +680,37 @@ void Operation::addmarkers(const QString msg)
         marker.y=markerinfo[4].toDouble();
         marker.z=markerinfo[5].toDouble();
 
-//        for(auto it=markers.begin();it!=markers.end(); ++it)
-//        {
-//            if(fabs(it->x-marker.x)<1&&fabs(it->y-marker.y)<1&&fabs(it->z-marker.z)<1)
-//            {
-//                qDebug()<<"the marker has already existed";
-////                mutex.unlock();
-//                return;
-//            }
-//        }
+        for(auto it=markers.begin();it!=markers.end(); ++it)
+        {
+            if(fabs(it->x-marker.x)<1&&fabs(it->y-marker.y)<1&&fabs(it->z-marker.z)<1)
+            {
+                qDebug()<<"the marker has already existed";
+//                mutex.unlock();
+                flag = false;
+                break;
+            }
+            if(resolutionInfo.maxRes.x != 0){
+                if(marker.x < 0 || marker.x >= resolutionInfo.maxRes.x ||
+                    marker.y < 0 || marker.y >= resolutionInfo.maxRes.y ||
+                    marker.x < 0 || marker.z >= resolutionInfo.maxRes.z){
+                    errorMarkers.push_back(marker);
+                    flag = false;
+                    break;
+                }
+            }
+        }
 
-        markers.append(marker);
-        qDebug()<<"server addmarker";
+        if(flag){
+            markers.append(marker);
+            qDebug()<<"server addmarker";
+        }
+    }
+
+    QStringList result;
+    result.push_back(QString("%1 server %2 %3 %4").arg(0).arg(123).arg(123).arg(123));
+    for(int i=0;i<errorMarkers.size();i++){
+        QString curMarker=QString("%1 %2 %3 %4 %5 %6").arg(errorMarkers[i].color.r).arg(errorMarkers[i].color.g).arg(errorMarkers[i].color.b).arg(errorMarkers[i].x).arg(errorMarkers[i].y).arg(errorMarkers[i].z);
+        result.push_back(curMarker);
     }
 }
 
@@ -688,21 +741,22 @@ void Operation::delmarkers(const QString msg)
     QMutexLocker locker(&mutex);
     for(auto &msg:pointlist){
         auto markerinfo=msg.split(' ',Qt::SkipEmptyParts);
-        if(markerinfo.size()!=6) continue;
+        if(markerinfo.size()!=6)
+            continue;
         marker.color.r=markerinfo[0].toUInt();
         marker.color.g=markerinfo[1].toUInt();
         marker.color.b=markerinfo[2].toUInt();
         marker.x=markerinfo[3].toDouble();
         marker.y=markerinfo[4].toDouble();
         marker.z=markerinfo[5].toDouble();
-//        if(isSomaExists&&sqrt((marker.x-somaCoordinate.x)*(marker.x-somaCoordinate.x)+
-//                (marker.y-somaCoordinate.y)*(marker.y-somaCoordinate.y)+
-//                (marker.z-somaCoordinate.z)*(marker.z-somaCoordinate.z))<1)
-//        {
-//            qDebug()<<"cannot delete the soma marker";
-////            mutex.unlock();
-//            return;
-//        }
+        //        if(isSomaExists&&sqrt((marker.x-somaCoordinate.x)*(marker.x-somaCoordinate.x)+
+        //                (marker.y-somaCoordinate.y)*(marker.y-somaCoordinate.y)+
+        //                (marker.z-somaCoordinate.z)*(marker.z-somaCoordinate.z))<1)
+        //        {
+        //            qDebug()<<"cannot delete the soma marker";
+        ////            mutex.unlock();
+        //            return;
+        //        }
         idx=findnearest(marker,markers);
         if(idx!=-1) {
             markers.removeAt(idx);
@@ -747,13 +801,13 @@ void Operation::retypemarker(const QString msg){
         marker.x=markerinfo[3].toDouble();
         marker.y=markerinfo[4].toDouble();
         marker.z=markerinfo[5].toDouble();
-//        if(isSomaExists&&sqrt((marker.x-somaCoordinate.x)*(marker.x-somaCoordinate.x)+
-//                                 (marker.y-somaCoordinate.y)*(marker.y-somaCoordinate.y)+
-//                                 (marker.z-somaCoordinate.z)*(marker.z-somaCoordinate.z))<1)
-//        {
-//            qDebug()<<"cannot delete the soma marker";
-//            return;
-//        }
+        //        if(isSomaExists&&sqrt((marker.x-somaCoordinate.x)*(marker.x-somaCoordinate.x)+
+        //                                 (marker.y-somaCoordinate.y)*(marker.y-somaCoordinate.y)+
+        //                                 (marker.z-somaCoordinate.z)*(marker.z-somaCoordinate.z))<1)
+        //        {
+        //            qDebug()<<"cannot delete the soma marker";
+        //            return;
+        //        }
         idx=findnearest(marker,markers);
         if(idx!=-1) {
             markers[idx].color.r=marker.color.r;
@@ -770,13 +824,19 @@ void Operation::retypemarker(const QString msg){
 void Operation::simpleConnectExecutor(V_NeuronSWC_list& segments, vector<segInfoUnit>& segInfo)
 {
 
-    qDebug()<<"begin to simpleConnectExecutor";
+     qDebug()<<"begin to simpleConnectExecutor";
     // This method is the "executor" of Renderer_gl1::simpleConnect(), MK, May, 2018
+    segInfoUnit mainSeg, branchSeg;
+    bool flag=false;
+    V_NeuronSWC old_seg;
+    V_NeuronSWC res_seg;
+    int beforeDelPoint_size = 0;
+    int point_size=0;
 
     //////////////////////////////////////////// HEAD TAIL CONNECTION ////////////////////////////////////////////
     if ((segInfo.at(0).head_tail == -1 || segInfo.at(0).head_tail == 2) && (segInfo.at(1).head_tail == -1 || segInfo.at(1).head_tail == 2))
     {
-        segInfoUnit mainSeg, branchSeg;
+        flag=true;
         if (segInfo.at(0).nodeCount >= segInfo.at(1).nodeCount)
         {
             mainSeg = segInfo.at(0);
@@ -795,6 +855,9 @@ void Operation::simpleConnectExecutor(V_NeuronSWC_list& segments, vector<segInfo
         double assignedType;
         assignedType = segments.seg[segInfo.at(0).segID].row[0].type;
         segments.seg[mainSeg.segID].row[0].seg_id = mainSeg.segID;
+        old_seg=segments.seg[mainSeg.segID];
+        beforeDelPoint_size = segments.nrows();
+        point_size = segments.nrows()-old_seg.nrows();
         //        qDebug()<<"zll___debug__mainSeg.head_tail"<<mainSeg.head_tail;
         if (mainSeg.head_tail == -1)
         {
@@ -877,13 +940,14 @@ void Operation::simpleConnectExecutor(V_NeuronSWC_list& segments, vector<segInfo
             reID->type = assignedType;
             //            qDebug()<<"zll_debug"<<reID->type;
         }
+        res_seg=segments.seg[mainSeg.segID];
     }
     //////////////////////////////////////////// END of [HEAD TAIL CONNECTION] ////////////////////////////////////////////
 
     //////////////////////////////////////////// BRANCHING CONNECTION ////////////////////////////////////////////
     if ((segInfo.at(0).head_tail != -1 && segInfo.at(0).head_tail != 2) ^ (segInfo.at(1).head_tail != -1 && segInfo.at(1).head_tail != 2))
     {
-        segInfoUnit mainSeg, branchSeg;
+        flag=true;
         if (segInfo.at(0).head_tail == -1 || segInfo.at(0).head_tail == 2)
         {
             mainSeg = segInfo.at(1);
@@ -902,6 +966,9 @@ void Operation::simpleConnectExecutor(V_NeuronSWC_list& segments, vector<segInfo
         double assignedType;
         assignedType = segments.seg[segInfo.at(0).segID].row[0].type;
         segments.seg[mainSeg.segID].row[0].seg_id = mainSeg.segID;
+        old_seg=segments.seg[mainSeg.segID];
+        beforeDelPoint_size = segments.nrows();
+        point_size = segments.nrows()-old_seg.nrows();
         if (branchSeg.head_tail == 2) // branch to tail
         {
             std::reverse(segments.seg[branchSeg.segID].row.begin(), segments.seg[branchSeg.segID].row.end());
@@ -947,8 +1014,8 @@ void Operation::simpleConnectExecutor(V_NeuronSWC_list& segments, vector<segInfo
             reID->seg_id = mainSeg.segID;
             reID->type = assignedType;
         }
+        res_seg=segments.seg[mainSeg.segID];
     }
     //////////////////////////////////////////// END of [BRANCHING CONNECTION] ////////////////////////////////////////////
-
     return;
 }

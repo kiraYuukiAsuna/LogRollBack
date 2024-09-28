@@ -43,7 +43,9 @@ NeuronTree V_NeuronSWC__2__NeuronTree(V_NeuronSWC & tracedNeuronSeg);// convert 
 NeuronTree V_NeuronSWC_list__2__NeuronTree(V_NeuronSWC_list & tracedNeuron); //convert to V3D's external neuron structure
 
 V_NeuronSWC_list NeuronTree__2__V_NeuronSWC_list(NeuronTree * nt);           //convert to V3D's internal neuron structure
+V_NeuronSWC_list NeuronTree__2__V_NeuronSWC_list(NeuronTree * nt, vector<string> uuids);
 V_NeuronSWC_list NeuronTree__2__V_NeuronSWC_list(NeuronTree & nt);           //convert to V3D's internal neuron structure. overload for convenience
+V_NeuronSWC_list NeuronTree__2__V_NeuronSWC_list(NeuronTree & nt, vector<string> uuids);
 
 #endif
 

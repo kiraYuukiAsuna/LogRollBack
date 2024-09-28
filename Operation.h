@@ -26,7 +26,7 @@ public:
 
 public:
     void addseg(const QString msg);//加线
-    void addmanysegs(const QString msg); //加很多线
+    bool addmanysegs(const QString msg); //加很多线
     void delseg(const QString msg);//减线
     void addmarkers(const QString msg);//加marker
     void delmarkers(const QString msg);//删marker

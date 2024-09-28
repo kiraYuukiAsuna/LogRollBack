@@ -10,7 +10,7 @@ WebApi::WebApi(const std::string &host) : BrainTellHostAddress(host) {
 
 std::tuple<bool,ImageResolutionInfo> WebApi::getImageResolution(const std::string &imageName) {
     httplib::Client client(BrainTellHostAddress);
-    std::string api = "/dynamic/image/getimagelist";
+    std::string api = "/release/image/getimagelist";
     std::string body;
 
     json jObject;

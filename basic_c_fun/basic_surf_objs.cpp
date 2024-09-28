@@ -36,17 +36,10 @@ Peng, H, Ruan, Z., Atasoy, D., and Sternson, S. (2010) “Automatic reconstructi
 //100119: merge with the io_ano_file.cpp
 
 #include "basic_surf_objs.h"
-
-#include <qfile.h>
-
 #include "v3d_message.h"
 
 #include <QString>
 #include <string.h>
-
-#include "v3d_message.h"
-
-struct CellAPO;
 
 QList <CellAPO> readAPO_file(const QString& filename)
 {
@@ -90,7 +83,7 @@ QList <CellAPO> readAPO_file(const QString& filename)
         	if (i==0) S.n = qsl[i].toInt();
             else if (i==1) S.orderinfo = "";
             else if (i==2) S.name = ""; //strcpy(S.name, qsl[i].toStdString().c_str()); //by PHC, 090219
-            else if (i==3) S.comment = ""; //by PHC, added on 090220
+            else if (i==3) S.comment = qsl[i]; //by PHC, added on 090220
         	else if (i==4) S.z = qsl[i].toFloat();
         	else if (i==5) S.x = qsl[i].toFloat();
         	else if (i==6) S.y = qsl[i].toFloat();

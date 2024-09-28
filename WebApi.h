@@ -12,7 +12,7 @@ struct Vec3 {
 };
 
 struct ImageResolutionInfo {
-    Vec3 maxRes{1, 1, 1};
+    Vec3 maxRes{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
     Vec3 subRes{1, 1, 1};
 };
 

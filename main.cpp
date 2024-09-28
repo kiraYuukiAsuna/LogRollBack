@@ -1,10 +1,11 @@
+#include "WebApi.h"
 #include <fstream>
 #include <iostream>
 #include "Util.h"
 #include "Operation.h"
 #include "neuron_editing/neuron_format_converter.h"
 #include "json.hpp"
-#include "WebApi.h"
+
 
 inline std::vector<std::string> stringSplit(const std::string&str, char delim) {
     std::stringstream ss(str);
@@ -58,14 +59,14 @@ public:
 };
 
 int main(int argc, char* argv[]) {
-    std::ifstream configFile(R"(C:\Users\KiraY\Desktop\Data\mouselog\meta.json)");
+    std::ifstream configFile(R"(C:\Users\KiraY\Desktop\Data\humanlog\meta.json)");
     nlohmann::json config = nlohmann::json::parse(configFile);
     std::vector<LogFileInfo> logFileInfos = config;
 
     for (auto&logInfo: logFileInfos) {
         try {
             std::filesystem::path path = logInfo.ReconstructionPath;
-            std::filesystem::path outPath = R"(C:\Users\KiraY\Desktop\Data\mouselogrollback)";
+            std::filesystem::path outPath = R"(C:\Users\KiraY\Desktop\Data\humanlogrollback)";
             outPath /= std::filesystem::path(logInfo.ResultPath).filename();
 
             Operation op;
@@ -82,17 +83,10 @@ int main(int argc, char* argv[]) {
 
 
             auto input = std::filesystem::path(logInfo.ResultPath).filename().string();
-            size_t pos = input.find_first_of('_');
-            std::string resultImageName;
-            if (pos != std::string::npos) {
-                resultImageName = input.substr(0, pos);
-                std::cout << "Found Image Name value: " << resultImageName << '\n';
-            } else {
-                std::cout << "Character '_' not found!" << '\n';
-            }
+            auto res = stringSplit(input, '_');
 
             WebApi api;
-            auto [err, resolutionInfo] = api.getImageResolution(resultImageName);
+            auto [err, resolutionInfo] = api.getImageResolution(res[0]);
             op.resolutionInfo = resolutionInfo;
 
 
