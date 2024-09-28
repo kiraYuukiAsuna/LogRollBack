@@ -1,10 +1,10 @@
+#include "WebApi.h"
 #include <fstream>
 #include <iostream>
 #include "Util.h"
 #include "Operation.h"
 #include "neuron_editing/neuron_format_converter.h"
 #include "json.hpp"
-#include "WebApi.h"
 
 inline std::vector<std::string> stringSplit(const std::string&str, char delim) {
     std::stringstream ss(str);
