@@ -6,6 +6,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 set(CMAKE_PREFIX_PATH "C:/Qt/6.6.0/msvc2019_64")
 
 find_package(Qt6 COMPONENTS
@@ -22,7 +24,10 @@ add_executable(LogRollBack main.cpp
         neuron_editing/v_neuronswc.cpp
         Operation.cpp
         Operation.h
-        Util.h)
+        Util.h
+        WebApi.cpp
+        WebApi.h
+)
 target_link_libraries(LogRollBack
         Qt::Core
 )

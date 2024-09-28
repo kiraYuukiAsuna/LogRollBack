@@ -4,6 +4,7 @@
 #include "Operation.h"
 #include "neuron_editing/neuron_format_converter.h"
 #include "json.hpp"
+#include "WebApi.h"
 
 inline std::vector<std::string> stringSplit(const std::string&str, char delim) {
     std::stringstream ss(str);
@@ -79,6 +80,22 @@ int main(int argc, char* argv[]) {
                 continue;
             }
 
+
+            auto input = std::filesystem::path(logInfo.ResultPath).filename().string();
+            size_t pos = input.find_first_of('_');
+            std::string resultImageName;
+            if (pos != std::string::npos) {
+                resultImageName = input.substr(0, pos);
+                std::cout << "Found Image Name value: " << resultImageName << '\n';
+            } else {
+                std::cout << "Character '_' not found!" << '\n';
+            }
+
+            WebApi api;
+            auto [err, resolutionInfo] = api.getImageResolution(resultImageName);
+            op.resolutionInfo = resolutionInfo;
+
+
             bool skip = false;
 
             std::string line;
@@ -100,7 +117,6 @@ int main(int argc, char* argv[]) {
 
                 int deviceId = std::stoi(rs[0]);
                 int userId = std::stoi(rs[1]);
-
 
                 if (msg.startsWith("/drawline_norm:") || msg.startsWith("/drawline_undo:") || msg.
                     startsWith("/drawline_redo:")) {
