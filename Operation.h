@@ -1,5 +1,6 @@
 #pragma once
 
+#include "WebApi.h"
 #include "basic_c_fun/basic_surf_objs.h"
 #include "neuron_editing/v_neuronswc.h"
 
@@ -18,6 +19,8 @@ class Operation {
 public:
     V_NeuronSWC_list segments;
     QList<CellAPO> markers;
+
+    ImageResolutionInfo resolutionInfo;
 
     QMutex mutex;
 
