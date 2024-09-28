@@ -79,13 +79,14 @@ int main(int argc, char* argv[]) {
                 continue;
             }
 
+            bool skip = false;
+
             std::string line;
-
-            if(QString::fromStdString(line).contains("...")) {
-                continue;
-            }
-
             while (std::getline(file, line)) {
+                if(QString::fromStdString(line).contains("...")) {
+                    skip = true;
+                    break;
+                }
                 auto timepointStr = line.substr(0, std::string{"2023/08/14 14:53:10.9571"}.size() + 1);
                 DateTime dt = parseDateTime(timepointStr);
 
@@ -141,6 +142,10 @@ int main(int argc, char* argv[]) {
                 // // QString::number按照第二个参数提供的转换进制将数字类型转换为QString
                 // log=QDateTime::currentDateTime().toString("yyyy/MM/dd hh:mm:ss.zzz")+QString::number(myServer->processedmsgcnt+myServer->savedmsgcnt)+" "+msg+"\n";
                 // logfile->write(log.toStdString().c_str(),log.toStdString().size());
+            }
+
+            if(skip) {
+                continue;
             }
 
             writeESWC_file(QString::fromStdString(outPath.string()), V_NeuronSWC_list__2__NeuronTree(op.segments));

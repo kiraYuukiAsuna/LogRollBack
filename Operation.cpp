@@ -8,8 +8,6 @@
 
 void Operation::addseg(const QString msg)
 {
-    std::string aa = msg.toStdString();
-
     QStringList pointlistwithheader=msg.split(',',Qt::SkipEmptyParts);
     if(pointlistwithheader.size()<1){
         std::cerr<<"ERROR:pointlistwithheader.size<1\n";
