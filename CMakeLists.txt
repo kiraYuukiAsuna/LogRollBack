@@ -8,7 +8,6 @@ set(CMAKE_AUTOUIC ON)
 
 set(CMAKE_PREFIX_PATH "C:/Qt/6.6.0/msvc2019_64")
 
-
 find_package(Qt6 COMPONENTS
         Core
         REQUIRED)
@@ -26,6 +25,11 @@ add_executable(LogRollBack main.cpp
         Util.h)
 target_link_libraries(LogRollBack
         Qt::Core
+)
+
+target_include_directories(LogRollBack PRIVATE
+        stdexec
+        json/nlohmann
 )
 
 if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)

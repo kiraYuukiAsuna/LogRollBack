@@ -1,5 +1,6 @@
 #pragma once
 #include "basic_c_fun/basic_surf_objs.h"
+#include "neuron_editing/v_neuronswc.h"
 
 
 inline double distance(const CellAPO&m1, const CellAPO&m2) {
@@ -29,7 +30,7 @@ inline double getSegLength(V_NeuronSWC&seg) {
 }
 
 
-NeuronTree convertMsg2NT(QStringList pointlist,int client,int user, int isMany, int mode=0)
+inline NeuronTree convertMsg2NT(QStringList pointlist,int client,int user, int isMany, int mode=0)
 {
     NeuronTree newTempNT;
     newTempNT.listNeuron.clear();
@@ -99,7 +100,7 @@ NeuronTree convertMsg2NT(QStringList pointlist,int client,int user, int isMany, 
 }
 
 
-vector<V_NeuronSWC>::iterator findseg(vector<V_NeuronSWC>::iterator begin,vector<V_NeuronSWC>::iterator end,const V_NeuronSWC seg)
+inline vector<V_NeuronSWC>::iterator findseg(vector<V_NeuronSWC>::iterator begin,vector<V_NeuronSWC>::iterator end,const V_NeuronSWC seg)
 {
     vector<V_NeuronSWC>::iterator result=end;
     double mindist=5;
@@ -146,7 +147,7 @@ vector<V_NeuronSWC>::iterator findseg(vector<V_NeuronSWC>::iterator begin,vector
     return result;
 }
 
-void reverseSeg(V_NeuronSWC& seg){
+inline void reverseSeg(V_NeuronSWC& seg){
     reverse(seg.row.begin(), seg.row.end());
     for(int i=0; i<seg.row.size(); i++){
         seg.row[i].n=i+1;
@@ -155,7 +156,7 @@ void reverseSeg(V_NeuronSWC& seg){
     seg.row[seg.row.size()-1].parent=-1;
 }
 
-int findnearest(const CellAPO &m,const QList<CellAPO> &markers)
+inline int findnearest(const CellAPO &m,const QList<CellAPO> &markers)
 {
     int index=-1;
     double thres=1;
